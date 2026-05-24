@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-
+import {
+  PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer
+} from "recharts";
 const API = "http://127.0.0.1:8000/api";
 
 function AdminRegionalDashboard({ initialTab = "stats" }) {
@@ -114,7 +117,7 @@ function AdminRegionalDashboard({ initialTab = "stats" }) {
   return (
     <section className="panel">
       <div className="panel-header" style={{ marginBottom: "20px" }}>
-        <h2 style={{ color: "#4e73df" }}>
+        <h2 style={{ color: "#047857" }}>
           <i
             className="fas fa-globe-africa"
             style={{ marginRight: "10px" }}
@@ -191,7 +194,7 @@ function AdminRegionalDashboard({ initialTab = "stats" }) {
               {
                 label: "Comités Total",
                 value: stats.nb_comites,
-                color: "#4e73df",
+                color: "#047857",
                 icon: "fas fa-layer-group",
               },
               {
@@ -215,7 +218,7 @@ function AdminRegionalDashboard({ initialTab = "stats" }) {
               {
                 label: "PVs Inscription",
                 value: stats.nb_pvs_inscription,
-                color: "#36b9cc",
+                color: "#16a34a",
                 icon: "fas fa-file-signature",
               },
               {
@@ -233,7 +236,7 @@ function AdminRegionalDashboard({ initialTab = "stats" }) {
               {
                 label: "Admins Locaux",
                 value: stats.nb_admin_locaux,
-                color: "#4e73df",
+                color: "#047857",
                 icon: "fas fa-users-cog",
               },
             ].map((s, i) => (
@@ -270,6 +273,66 @@ function AdminRegionalDashboard({ initialTab = "stats" }) {
               </div>
             ))}
           </div>
+
+          {/* Charts Row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+            <div className="card">
+              <h3 style={{ marginBottom: "15px", color: "#334155" }}>Répartition des Comités</h3>
+              <div style={{ width: '100%', height: 300 }}>
+                <ResponsiveContainer>
+                  <PieChart>
+                    <Pie 
+                      data={[
+                        { name: 'Inscription', value: stats.comites_inscription, color: '#047857' },
+                        { name: 'Collection', value: stats.comites_collection, color: '#f6c23e' },
+                        { name: 'Bouclage', value: stats.comites_bouclage, color: '#e74a3b' },
+                      ]} 
+                      dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} label
+                    >
+                      {[
+                        { name: 'Inscription', value: stats.comites_inscription, color: '#047857' },
+                        { name: 'Collection', value: stats.comites_collection, color: '#f6c23e' },
+                        { name: 'Bouclage', value: stats.comites_bouclage, color: '#e74a3b' },
+                      ].map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            
+            <div className="card">
+              <h3 style={{ marginBottom: "15px", color: "#334155" }}>Statistiques des animaux de la région</h3>
+              <div style={{ width: '100%', height: 300 }}>
+                <ResponsiveContainer>
+                  <BarChart data={[
+                    { name: 'Moutons', count: stats.total_moutons || 0, fill: '#3b82f6' },
+                    { name: 'Chèvres', count: stats.total_chevres || 0, fill: '#10b981' },
+                    { name: 'Vaches', count: stats.total_vaches || 0, fill: '#f59e0b' },
+                    { name: 'Chamelles', count: stats.total_chamelles || 0, fill: '#ef4444' },
+                  ]}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="name" />
+                    <YAxis allowDecimals={false} />
+                    <RechartsTooltip cursor={{fill: 'transparent'}} />
+                    <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                      {[
+                        { name: 'Moutons', count: stats.total_moutons || 0, fill: '#3b82f6' },
+                        { name: 'Chèvres', count: stats.total_chevres || 0, fill: '#10b981' },
+                        { name: 'Vaches', count: stats.total_vaches || 0, fill: '#f59e0b' },
+                        { name: 'Chamelles', count: stats.total_chamelles || 0, fill: '#ef4444' },
+                      ].map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -286,7 +349,7 @@ function AdminRegionalDashboard({ initialTab = "stats" }) {
               border: "1px solid #e2e8f0",
             }}
           >
-            <h3 style={{ margin: "0 0 15px 0", color: "#4e73df" }}>
+            <h3 style={{ margin: "0 0 15px 0", color: "#047857" }}>
               Créer un Admin Local
             </h3>
             {message && (

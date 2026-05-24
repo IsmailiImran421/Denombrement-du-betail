@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import FicheImprimable from "./FicheImprimable";
 
 const API = "http://127.0.0.1:8000/api";
 
@@ -39,6 +40,7 @@ function PvManager({ type, user }) {
   });
 
   const [message, setMessage] = useState("");
+  const [showFiche, setShowFiche] = useState(false);
 
   const headers = {
     Authorization: `Bearer ${token}`,
@@ -254,8 +256,53 @@ function PvManager({ type, user }) {
 
   return (
     <section className="panel">
-      <div className="panel-header">
+      <div className="panel-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h2>Gestion des Tâches par Comité</h2>
+        {(type === "collection" || type === "bouclage") && (
+          <button
+            onClick={() => setShowFiche(true)}
+            style={{
+              background: "linear-gradient(135deg, #1e3a8a, #3b82f6)",
+              color: "#fff",
+              border: "none",
+              borderRadius: "8px",
+              padding: "9px 18px",
+              fontWeight: "700",
+              fontSize: "13px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "7px",
+              boxShadow: "0 2px 10px rgba(30,58,138,0.3)",
+              transition: "opacity 0.2s",
+            }}
+            onMouseOver={e => e.currentTarget.style.opacity = "0.88"}
+            onMouseOut={e => e.currentTarget.style.opacity = "1"}
+          >
+            🖨️ Imprimer feuille de {type === "collection" ? "collecte" : "bouclage"}
+          </button>
+        )}
+        {type === "inscription" && (
+          <button
+            onClick={() => setShowFiche(true)}
+            style={{
+              background: "linear-gradient(135deg, #047857, #10b981)",
+              color: "#fff",
+              border: "none",
+              borderRadius: "8px",
+              padding: "9px 18px",
+              fontWeight: "700",
+              fontSize: "13px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "7px",
+              boxShadow: "0 2px 10px rgba(4,120,87,0.3)",
+            }}
+          >
+            🖨️ Imprimer feuille d'inscription
+          </button>
+        )}
       </div>
 
       <form className="form-card" onSubmit={handleSubmit}>
@@ -706,6 +753,16 @@ function PvManager({ type, user }) {
           </tbody>
         </table>
       </div>
+
+      {/* Fiche imprimable modale */}
+      {showFiche && (
+        <FicheImprimable
+          type={type}
+          comite={activeComite}
+          user={user}
+          onClose={() => setShowFiche(false)}
+        />
+      )}
     </section>
   );
 }

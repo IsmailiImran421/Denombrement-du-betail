@@ -9,6 +9,7 @@ use App\Models\PvBouclage;
 use App\Models\Comite;
 use App\Models\Eleveur;
 use App\Models\User;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
@@ -144,6 +145,30 @@ class PvController extends Controller
                     'id_comite' => $comite ? $comite->id_comite : null,
                     'date_generation' => now()
                 ]);
+
+                // Create notifications for Local Admins of the same region
+                $localAdmins = User::where('role', 'admin_local')->where('region', $user->region)->get();
+                foreach ($localAdmins as $admin) {
+                    Notification::create([
+                        'id_utilisateur' => $admin->id_utilisateur,
+                        'titre' => 'Nouvel éleveur inscrit',
+                        'message' => "L'éleveur " . $eleveur->nom . " " . $eleveur->prenom . " a été inscrit par le Moqaddem " . $user->nom . ". Une tâche de collection doit être effectuée.",
+                        'type_tache' => 'collection',
+                        'id_reference' => $pvInscription->id_rapport,
+                    ]);
+                }
+
+                // Create notifications for Collection Committees of the same region
+                $collectionComites = Comite::where('role', 'collection')->where('region', $user->region)->get();
+                foreach ($collectionComites as $colComite) {
+                    Notification::create([
+                        'id_comite' => $colComite->id_comite,
+                        'titre' => 'Nouvelle tâche de collection',
+                        'message' => "Un nouvel éleveur " . $eleveur->nom . " " . $eleveur->prenom . " a été inscrit. Veuillez effectuer la tâche de collection.",
+                        'type_tache' => 'collection',
+                        'id_reference' => $pvInscription->id_rapport,
+                    ]);
+                }
             } else {
                 if (!$id_eleveur) {
                     throw new \Exception("L'éleveur est obligatoire pour la collection et le bouclage.");
@@ -174,6 +199,30 @@ class PvController extends Controller
                             'total_chamelles_femmelles' => $validated['total_chamelles_femmelles'] ?? 0,
                         ]
                     );
+
+                    // Notify Regional Admins of the region
+                    $regionalAdmins = User::where('role', 'admin_regional')->where('region', $comite->region)->get();
+                    foreach ($regionalAdmins as $regAdmin) {
+                        Notification::create([
+                            'id_utilisateur' => $regAdmin->id_utilisateur,
+                            'titre' => 'Collection à valider',
+                            'message' => "Le comité " . $comite->nom_comite . " a soumis les données de collection pour l'éleveur " . $pvInscription->eleveur->nom . " " . $pvInscription->eleveur->prenom . ". Validation requise.",
+                            'type_tache' => 'validation',
+                            'id_reference' => $pvInscription->id_rapport,
+                        ]);
+                    }
+
+                    // Notify Local Admins of the region
+                    $localAdmins = User::where('role', 'admin_local')->where('region', $comite->region)->get();
+                    foreach ($localAdmins as $locAdmin) {
+                        Notification::create([
+                            'id_utilisateur' => $locAdmin->id_utilisateur,
+                            'titre' => 'Tâche de collection terminée',
+                            'message' => "Le comité " . $comite->nom_comite . " a terminé la tâche de collection pour l'éleveur " . $pvInscription->eleveur->nom . " " . $pvInscription->eleveur->prenom . ".",
+                            'type_tache' => 'collection',
+                            'id_reference' => $pvInscription->id_rapport,
+                        ]);
+                    }
                 } elseif ($role === 'bouclage') {
                     if (!$pvInscription->pvCollection) {
                         throw new \Exception("Le bouclage ne peut pas être enregistré avant la collection.");
@@ -190,6 +239,30 @@ class PvController extends Controller
                             'id_eleveur' => $id_eleveur,
                         ]
                     );
+
+                    // Notify Regional Admins of the region
+                    $regionalAdmins = User::where('role', 'admin_regional')->where('region', $comite->region)->get();
+                    foreach ($regionalAdmins as $regAdmin) {
+                        Notification::create([
+                            'id_utilisateur' => $regAdmin->id_utilisateur,
+                            'titre' => 'Bouclage à valider',
+                            'message' => "Le comité " . $comite->nom_comite . " a soumis les données de bouclage pour l'éleveur " . $pvInscription->eleveur->nom . " " . $pvInscription->eleveur->prenom . ". Validation requise.",
+                            'type_tache' => 'validation',
+                            'id_reference' => $pvInscription->id_rapport,
+                        ]);
+                    }
+
+                    // Notify Local Admins of the region
+                    $localAdmins = User::where('role', 'admin_local')->where('region', $comite->region)->get();
+                    foreach ($localAdmins as $locAdmin) {
+                        Notification::create([
+                            'id_utilisateur' => $locAdmin->id_utilisateur,
+                            'titre' => 'Tâche de bouclage terminée',
+                            'message' => "Le comité " . $comite->nom_comite . " a terminé la tâche de bouclage pour l'éleveur " . $pvInscription->eleveur->nom . " " . $pvInscription->eleveur->prenom . ".",
+                            'type_tache' => 'bouclage',
+                            'id_reference' => $pvInscription->id_rapport,
+                        ]);
+                    }
                 }
             }
 
@@ -262,6 +335,30 @@ class PvController extends Controller
         $pv->eleveur->id_utilisateur = $eleveurUser->id_utilisateur;
         $pv->eleveur->save();
 
+        // Notify Local Admins of the region
+        $localAdmins = User::where('role', 'admin_local')->where('region', $user->region)->get();
+        foreach ($localAdmins as $locAdmin) {
+            Notification::create([
+                'id_utilisateur' => $locAdmin->id_utilisateur,
+                'titre' => 'Bouclage validé et compte éleveur activé',
+                'message' => "Le bouclage pour l'éleveur " . $pv->eleveur->nom . " " . $pv->eleveur->prenom . " a été validé. Son compte éleveur est désormais actif.",
+                'type_tache' => 'validation',
+                'id_reference' => $pv->id_rapport,
+            ]);
+        }
+
+        // Notify Moqaddems of the region
+        $moqaddems = User::where('role', 'moqaddem')->where('region', $user->region)->get();
+        foreach ($moqaddems as $moq) {
+            Notification::create([
+                'id_utilisateur' => $moq->id_utilisateur,
+                'titre' => 'Compte éleveur activé',
+                'message' => "Le bouclage pour l'éleveur " . $pv->eleveur->nom . " " . $pv->eleveur->prenom . " a été validé et son compte est actif.",
+                'type_tache' => 'validation',
+                'id_reference' => $pv->id_rapport,
+            ]);
+        }
+
         return response()->json([
             'message' => 'Bouclage validé et compte éleveur créé.',
             'eleveur_id' => $pv->eleveur->id_eleveur,
@@ -284,7 +381,7 @@ class PvController extends Controller
             return response()->json(['error' => 'Non autorisé'], 403);
         }
 
-        $pv = PvInscription::with(['comite', 'pvCollection'])->findOrFail($id);
+        $pv = PvInscription::with(['comite', 'pvCollection', 'eleveur'])->findOrFail($id);
 
         if (!$pv->comite || $pv->comite->region !== $user->region) {
             return response()->json(['error' => 'PV hors de la région autorisée'], 403);
@@ -300,6 +397,30 @@ class PvController extends Controller
 
         $pv->pvCollection->valide = true;
         $pv->pvCollection->save();
+
+        // Notify bouclage committees of the region
+        $bouclageComites = Comite::where('role', 'bouclage')->where('region', $user->region)->get();
+        foreach ($bouclageComites as $boucComite) {
+            Notification::create([
+                'id_comite' => $boucComite->id_comite,
+                'titre' => 'Nouvelle tâche de bouclage',
+                'message' => "La collection pour l'éleveur " . $pv->eleveur->nom . " " . $pv->eleveur->prenom . " a été validée. Veuillez effectuer la tâche de bouclage.",
+                'type_tache' => 'bouclage',
+                'id_reference' => $pv->id_rapport,
+            ]);
+        }
+
+        // Notify local admins of the region
+        $localAdmins = User::where('role', 'admin_local')->where('region', $user->region)->get();
+        foreach ($localAdmins as $locAdmin) {
+            Notification::create([
+                'id_utilisateur' => $locAdmin->id_utilisateur,
+                'titre' => 'Collection validée',
+                'message' => "La collection pour l'éleveur " . $pv->eleveur->nom . " " . $pv->eleveur->prenom . " a été validée par l'admin régional. La tâche de bouclage est en attente.",
+                'type_tache' => 'validation',
+                'id_reference' => $pv->id_rapport,
+            ]);
+        }
 
         return response()->json([
             'message' => 'Collection validée avec succès.',

@@ -9,6 +9,7 @@ import MoqaddedDashboard from "./components/MoqaddedDashboard";
 import EleveurDashboard from "./components/EleveurDashboard";
 import { useAuth } from "./context/AuthContext";
 import Login from "./components/Login";
+import NotificationBell from "./components/NotificationBell";
 
 /* ─── Barre de navigation commune ─── */
 function Sidebar({ page, setPage, pvMenuOpen, setPvMenuOpen, user }) {
@@ -247,8 +248,9 @@ function Topbar({ page, user, region, logout }) {
       </div>
       <div
         className="topbar-right"
-        style={{ display: "flex", alignItems: "center", gap: "15px" }}
+        style={{ display: "flex", alignItems: "center", gap: "20px" }}
       >
+        <NotificationBell />
         <div style={{ textAlign: "right", fontSize: "0.85rem" }}>
           <strong style={{ display: "block", color: "#5a5c69" }}>
             {user.nom}
@@ -259,7 +261,7 @@ function Topbar({ page, user, region, logout }) {
           {region && (
             <span
               style={{
-                color: "#4e73df",
+                color: "#047857",
                 display: "block",
                 fontWeight: "bold",
                 fontSize: "0.78rem",
@@ -311,7 +313,7 @@ function App() {
           justifyContent: "center",
           alignItems: "center",
           height: "100vh",
-          background: "linear-gradient(135deg,#4e73df,#224abe)",
+          background: "linear-gradient(135deg,#34d399,#047857)",
           color: "#fff",
           flexDirection: "column",
           gap: "15px",

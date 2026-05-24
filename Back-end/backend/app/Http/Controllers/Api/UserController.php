@@ -166,6 +166,16 @@ class UserController extends Controller
         // Admins locaux de la région
         $nb_admin_locaux = User::where('region', $region)->where('role', 'admin_local')->count();
 
+        // Calcul des animaux
+        $collections = PvCollection::whereHas('pvInscription', function($q) use ($comite_ids) {
+            $q->whereIn('id_comite', $comite_ids);
+        })->get();
+
+        $total_moutons = $collections->sum(function($c) { return $c->total_moutons_males + $c->total_moutons_femmelles; });
+        $total_chevres = $collections->sum(function($c) { return $c->total_chevres_males + $c->total_chevres_femmelles; });
+        $total_vaches = $collections->sum(function($c) { return $c->total_vaches_males + $c->total_vaches_femmelles; });
+        $total_chamelles = $collections->sum(function($c) { return $c->total_chamelles_males + $c->total_chamelles_femmelles; });
+
         return response()->json([
             'region'               => $region,
             'nb_comites'           => $nb_comites,
@@ -177,6 +187,10 @@ class UserController extends Controller
             'nb_pvs_collection'    => $nb_collections,
             'nb_pvs_bouclage'      => $nb_bouclages,
             'nb_admin_locaux'      => $nb_admin_locaux,
+            'total_moutons'        => $total_moutons,
+            'total_chevres'        => $total_chevres,
+            'total_vaches'         => $total_vaches,
+            'total_chamelles'      => $total_chamelles,
         ]);
     }
 
@@ -198,5 +212,64 @@ class UserController extends Controller
             ->get();
 
         return response()->json($pvs);
+    }
+
+    /**
+     * Liste des réclamations pour la région (pour Admin Local)
+     */
+    public function reclamationsRegion(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->role !== 'admin_local') {
+            return response()->json(['message' => 'Non autorisé'], 403);
+        }
+
+        // Récupérer les réclamations des éleveurs de la région (via comite)
+        // Simplification: si les éleveurs sont liés à un PV inscription géré par un comité de la région.
+        $eleveur_ids = \App\Models\Eleveur::whereHas('pvInscription.comite', function($q) use ($user) {
+            $q->where('region', $user->region);
+        })->pluck('id_eleveur');
+
+        $reclamations = \App\Models\Reclamation::with('eleveur')
+            ->whereIn('id_eleveur', $eleveur_ids)
+            ->orderBy('date_plainte', 'desc')
+            ->get();
+
+        return response()->json($reclamations);
+    }
+
+    public function resolveReclamation(Request $request, $id)
+    {
+        $user = $request->user();
+
+        if ($user->role !== 'admin_local') {
+            return response()->json(['message' => 'Non autorisé'], 403);
+        }
+
+        $request->validate([
+            'statut'  => 'required|in:resolue,rejetee',
+            'reponse' => 'required|string',
+        ]);
+
+        $reclamation = \App\Models\Reclamation::with('eleveur')->findOrFail($id);
+        
+        $reclamation->update([
+            'statut'  => $request->statut,
+            'reponse' => $request->reponse,
+            'resolue' => $request->statut === 'resolue',
+        ]);
+
+        if ($reclamation->eleveur && $reclamation->eleveur->id_utilisateur) {
+            \App\Models\Notification::create([
+                'id_utilisateur' => $reclamation->eleveur->id_utilisateur,
+                'titre'          => 'Réclamation ' . ($request->statut === 'resolue' ? 'Résolue' : 'Rejetée'),
+                'message'        => 'L\'administrateur a répondu à votre réclamation: "' . $reclamation->sujet . '".',
+                'type_tache'     => 'reclamation',
+                'id_reference'   => $reclamation->id_plainte,
+            ]);
+        }
+
+        return response()->json($reclamation);
     }
 }

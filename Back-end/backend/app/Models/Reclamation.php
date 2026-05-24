@@ -17,6 +17,9 @@ class Reclamation extends Model
         'description',
         'date_plainte',
         'id_eleveur',
+        'resolue',
+        'reponse',
+        'statut',
     ];
 
     protected $casts = [

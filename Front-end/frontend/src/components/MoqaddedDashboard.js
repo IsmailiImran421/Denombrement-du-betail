@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
+import FicheImprimable from "./FicheImprimable";
 
 const API = "http://127.0.0.1:8000/api";
 
@@ -8,6 +9,7 @@ function MoqaddedDashboard() {
   const [pvs, setPvs] = useState([]);
   const [message, setMessage] = useState("");
   const [activeTab, setActiveTab] = useState("formulaire");
+  const [showFiche, setShowFiche] = useState(false);
 
   const [formData, setFormData] = useState({
     nom_eleveur: "",
@@ -85,7 +87,7 @@ function MoqaddedDashboard() {
   return (
     <section className="panel">
       <div className="panel-header" style={{ marginBottom: "20px" }}>
-        <h2 style={{ color: "#4e73df" }}>
+        <h2 style={{ color: "#047857" }}>
           <i className="fas fa-user-tag" style={{ marginRight: "10px" }}></i>
           Espace Moqaddem – Inscription des Éleveurs
         </h2>
@@ -105,7 +107,29 @@ function MoqaddedDashboard() {
           paddingBottom: "10px",
         }}
       >
-        {[
+        {/* Bouton Fiche imprimable */}
+      <button
+        onClick={() => setShowFiche(true)}
+        style={{
+          marginLeft: "auto",
+          background: "linear-gradient(135deg, #047857, #10b981)",
+          color: "#fff",
+          border: "none",
+          borderRadius: "8px",
+          padding: "8px 16px",
+          fontWeight: "700",
+          fontSize: "13px",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+          boxShadow: "0 2px 8px rgba(4,120,87,0.3)",
+        }}
+      >
+        🖨️ Imprimer feuille de collecte
+      </button>
+
+      {[
           { key: "formulaire", label: "📝 Inscrire un éleveur" },
           { key: "historique", label: "📋 Historique" },
         ].map((tab) => (
@@ -128,10 +152,10 @@ function MoqaddedDashboard() {
               background: "#f8fafc",
               padding: "20px",
               borderRadius: "12px",
-              border: "1px solid #4e73df",
+              border: "1px solid #10b981",
             }}
           >
-            <h3 style={{ margin: "0 0 15px 0", color: "#4e73df" }}>
+            <h3 style={{ margin: "0 0 15px 0", color: "#047857" }}>
               Informations de l'éleveur
             </h3>
 
@@ -313,6 +337,16 @@ function MoqaddedDashboard() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Fiche imprimable modale */}
+      {showFiche && (
+        <FicheImprimable
+          type="inscription"
+          comite={null}
+          user={user}
+          onClose={() => setShowFiche(false)}
+        />
       )}
     </section>
   );

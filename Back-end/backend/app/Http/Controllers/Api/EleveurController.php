@@ -105,11 +105,12 @@ class EleveurController extends Controller
             return response()->json(['error' => 'Non autorisé'], 403);
         }
 
-        $eleveur = Eleveur::where('id_utilisateur', $user->id_utilisateur)->first();
+        $eleveur = Eleveur::with('pvInscription.comite')->where('id_utilisateur', $user->id_utilisateur)->first();
         if (!$eleveur) {
             return response()->json(['error' => 'Éleveur introuvable'], 404);
         }
 
+        $validated = $request->request->all(); // Workaround for simple validation or use validate
         $validated = $request->validate([
             'sujet' => 'required|string|max:255',
             'description' => 'required|string',
@@ -121,6 +122,24 @@ class EleveurController extends Controller
             'date_plainte' => now(),
             'id_eleveur' => $eleveur->id_eleveur,
         ]);
+
+        // Notifier les administrateurs locaux de la région
+        $region = optional(optional($eleveur->pvInscription)->comite)->region;
+        if ($region) {
+            $adminLocals = \App\Models\User::where('role', 'admin_local')
+                                           ->where('region', $region)
+                                           ->get();
+            
+            foreach ($adminLocals as $admin) {
+                \App\Models\Notification::create([
+                    'id_utilisateur' => $admin->id_utilisateur,
+                    'titre' => 'Nouvelle Réclamation',
+                    'message' => 'L\'éleveur ' . $eleveur->nom . ' ' . $eleveur->prenom . ' a soumis une nouvelle réclamation : ' . $reclamation->sujet,
+                    'type_tache' => 'reclamation',
+                    'id_reference' => $reclamation->id_plainte,
+                ]);
+            }
+        }
 
         return response()->json($reclamation, 201);
     }

@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-
+import {
+  PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid
+} from 'recharts';
 function EleveurDashboard() {
   const { token } = useAuth();
   const [dashboard, setDashboard] = useState(null);
@@ -99,7 +102,7 @@ function EleveurDashboard() {
     return <div>Aucune donnée disponible pour votre compte.</div>;
   }
 
-  const { eleveur, stats, reclamations } = dashboard;
+  const { eleveur, stats, reclamations, collection } = dashboard;
 
   return (
     <div className="eleveur-dashboard">
@@ -151,6 +154,136 @@ function EleveurDashboard() {
         </div>
       </div>
 
+      {/* Section des statistiques détaillées de dénombrement */}
+      <h3 className="stats-section-title">
+        📊 Suivi Détaillé du Dénombrement (Collection)
+      </h3>
+      <div className="stats-grid" style={{ gridTemplateColumns: "1fr" }}>
+        {/* Carte de Collection / Dénombrement */}
+        <div className="card" style={{ borderColor: collection ? (collection.valide ? "#10b981" : "#f59e0b") : "#ef4444" }}>
+          <div className="card-header-flex">
+            <h3>📊 Détails des Animaux Dénombrés</h3>
+            {collection ? (
+              collection.valide ? (
+                <span className="status-badge success">✓ Validé</span>
+              ) : (
+                <span className="status-badge warning">⏳ En cours</span>
+              )
+            ) : (
+              <span className="status-badge danger">✗ Non effectué</span>
+            )}
+          </div>
+          
+          {collection ? (
+            <div>
+              <table className="table-stats-animals">
+                <thead>
+                  <tr style={{ backgroundColor: "#f8fafc" }}>
+                    <th style={{ padding: "0.75rem 0.5rem" }}>Catégorie d'Animaux</th>
+                    <th className="text-right" style={{ padding: "0.75rem 0.5rem" }}>Total Enregistré (Détails par Sexe)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ paddingLeft: "0.5rem" }}><strong>Ovins (Moutons)</strong></td>
+                    <td className="text-right" style={{ paddingRight: "0.5rem" }}>
+                      <strong>{collection.total_moutons_males + collection.total_moutons_femmelles}</strong>
+                      <span className="gender-icons">({collection.total_moutons_males} Mâles ♂ / {collection.total_moutons_femmelles} Femelles ♀)</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ paddingLeft: "0.5rem" }}><strong>Caprins (Chèvres)</strong></td>
+                    <td className="text-right" style={{ paddingRight: "0.5rem" }}>
+                      <strong>{collection.total_chevres_males + collection.total_chevres_femmelles}</strong>
+                      <span className="gender-icons">({collection.total_chevres_males} Mâles ♂ / {collection.total_chevres_femmelles} Femelles ♀)</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ paddingLeft: "0.5rem" }}><strong>Bovins (Vaches)</strong></td>
+                    <td className="text-right" style={{ paddingRight: "0.5rem" }}>
+                      <strong>{collection.total_vaches_males + collection.total_vaches_femmelles}</strong>
+                      <span className="gender-icons">({collection.total_vaches_males} Mâles ♂ / {collection.total_vaches_femmelles} Femelles ♀)</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ paddingLeft: "0.5rem" }}><strong>Camelins (Chamelles)</strong></td>
+                    <td className="text-right" style={{ paddingRight: "0.5rem" }}>
+                      <strong>{collection.total_chamelles_males + collection.total_chamelles_femmelles}</strong>
+                      <span className="gender-icons">({collection.total_chamelles_males} Mâles ♂ / {collection.total_chamelles_femmelles} Femelles ♀)</span>
+                    </td>
+                  </tr>
+                  <tr style={{ borderTop: "2px solid #e2e8f0", backgroundColor: "#ecfdf5" }}>
+                    <td style={{ paddingLeft: "0.5rem" }}><strong>Total Général des Animaux</strong></td>
+                    <td className="text-right" style={{ paddingRight: "0.5rem" }}>
+                      <strong style={{ fontSize: "1.2rem", color: "#10b981" }}>{collection.total_animaux} têtes</strong>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginTop: '30px' }}>
+                <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                  <h4 style={{ textAlign: 'center', margin: '0 0 15px 0', color: '#334155' }}>Répartition par Espèce</h4>
+                  <div style={{ width: '100%', height: 250 }}>
+                    <ResponsiveContainer>
+                      <PieChart>
+                        <Pie 
+                          data={[
+                            { name: 'Moutons', value: collection.total_moutons_males + collection.total_moutons_femmelles, color: '#3b82f6' },
+                            { name: 'Chèvres', value: collection.total_chevres_males + collection.total_chevres_femmelles, color: '#10b981' },
+                            { name: 'Vaches', value: collection.total_vaches_males + collection.total_vaches_femmelles, color: '#f59e0b' },
+                            { name: 'Chamelles', value: collection.total_chamelles_males + collection.total_chamelles_femmelles, color: '#ef4444' },
+                          ].filter(d => d.value > 0)}
+                          dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={80} label
+                        >
+                          {[
+                            { name: 'Moutons', value: collection.total_moutons_males + collection.total_moutons_femmelles, color: '#3b82f6' },
+                            { name: 'Chèvres', value: collection.total_chevres_males + collection.total_chevres_femmelles, color: '#10b981' },
+                            { name: 'Vaches', value: collection.total_vaches_males + collection.total_vaches_femmelles, color: '#f59e0b' },
+                            { name: 'Chamelles', value: collection.total_chamelles_males + collection.total_chamelles_femmelles, color: '#ef4444' },
+                          ].filter(d => d.value > 0).map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <RechartsTooltip />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                  <h4 style={{ textAlign: 'center', margin: '0 0 15px 0', color: '#334155' }}>Mâles vs Femelles</h4>
+                  <div style={{ width: '100%', height: 250 }}>
+                    <ResponsiveContainer>
+                      <BarChart data={[
+                        { name: 'Moutons', Mâles: collection.total_moutons_males, Femelles: collection.total_moutons_femmelles },
+                        { name: 'Chèvres', Mâles: collection.total_chevres_males, Femelles: collection.total_chevres_femmelles },
+                        { name: 'Vaches', Mâles: collection.total_vaches_males, Femelles: collection.total_vaches_femmelles },
+                        { name: 'Chamelles', Mâles: collection.total_chamelles_males, Femelles: collection.total_chamelles_femmelles },
+                      ].filter(d => d.Mâles > 0 || d.Femelles > 0)}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="name" />
+                        <YAxis allowDecimals={false} />
+                        <RechartsTooltip cursor={{fill: 'transparent'}} />
+                        <Legend />
+                        <Bar dataKey="Mâles" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="Femelles" fill="#ec4899" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="stats-empty-state">
+              <div className="stats-empty-icon">📋</div>
+              <p>Aucun dénombrement n'a été enregistré pour le moment par la commission.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="card card-light" style={{ marginTop: "1.5rem" }}>
         <h3>Créer une réclamation</h3>
         <form onSubmit={submitReclamation}>
@@ -190,18 +323,39 @@ function EleveurDashboard() {
           <p>Aucune réclamation enregistrée.</p>
         ) : (
           <div className="reclamation-list">
-            {reclamations.map((reclamation) => (
+            {reclamations.map((reclamation, index) => (
               <div
                 className="reclamation-item"
-                key={reclamation.id_reclamation || reclamation.id}
+                key={reclamation.id_reclamation || reclamation.id || index}
+                style={{
+                  borderLeft: reclamation.statut === "resolue" ? "4px solid #10b981" : reclamation.statut === "rejetee" ? "4px solid #ef4444" : "4px solid #f59e0b"
+                }}
               >
                 <div className="reclamation-header">
                   <strong>{reclamation.sujet}</strong>
                   <span>
                     {new Date(reclamation.date_plainte).toLocaleDateString()}
+                    <span style={{ 
+                      marginLeft: "10px", padding: "2px 6px", borderRadius: "4px", fontSize: "0.8rem", 
+                      color: reclamation.statut === "resolue" ? "#065f46" : reclamation.statut === "rejetee" ? "#991b1b" : "#92400e", 
+                      background: reclamation.statut === "resolue" ? "#d1fae5" : reclamation.statut === "rejetee" ? "#fee2e2" : "#fef3c7" 
+                    }}>
+                      {reclamation.statut === "resolue" ? "Résolue" : reclamation.statut === "rejetee" ? "Rejetée" : "En attente"}
+                    </span>
                   </span>
                 </div>
-                <p>{reclamation.description}</p>
+                <p style={{ color: "#334155" }}>{reclamation.description}</p>
+                
+                {reclamation.reponse && (
+                  <div style={{ marginTop: "12px", padding: "10px", background: "#f1f5f9", borderRadius: "6px", borderLeft: "3px solid #94a3b8" }}>
+                    <strong style={{ display: "block", marginBottom: "4px", fontSize: "0.85rem", color: "#475569" }}>
+                      Réponse de l'administrateur :
+                    </strong>
+                    <p style={{ margin: 0, fontSize: "0.9rem", color: "#1e293b", whiteSpace: "pre-wrap" }}>
+                      {reclamation.reponse}
+                    </p>
+                  </div>
+                )}
               </div>
             ))}
           </div>

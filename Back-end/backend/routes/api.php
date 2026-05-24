@@ -29,6 +29,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/users/admin-local', [UserController::class, 'createAdminLocal']);
     Route::post('/users/moqaddem', [UserController::class, 'createMoqaddem']);
     Route::put('/comites/{id}/credentials', [UserController::class, 'assignComiteCredentials']);
+    Route::get('/reclamations/region', [UserController::class, 'reclamationsRegion']);
+    Route::post('/reclamations/{id}/resolve', [UserController::class, 'resolveReclamation']);
 
     // Stats et PVs pour Admin Régional
     Route::get('/stats/region', [UserController::class, 'statsRegion']);
@@ -45,3 +47,9 @@ Route::apiResource('comites', ComiteController::class);
 Route::apiResource('eleveurs', \App\Http\Controllers\Api\EleveurController::class);
 Route::apiResource('pvs', \App\Http\Controllers\Api\PvController::class);
 Route::get('pvs/{id}/pdf', [\App\Http\Controllers\Api\PvController::class, 'generatePdf']);
+
+// Notifications (accessible aux utilisateurs et comités)
+Route::get('/notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index']);
+Route::post('/notifications/{id}/read', [\App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);
+Route::post('/notifications/read-all', [\App\Http\Controllers\Api\NotificationController::class, 'markAllAsRead']);
+
